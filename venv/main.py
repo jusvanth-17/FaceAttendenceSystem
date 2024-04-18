@@ -1,3 +1,4 @@
+
 import os
 import pickle
 import numpy as np
@@ -11,35 +12,30 @@ from firebase_admin import storage
 import numpy as np
 from datetime import datetime
 
-
-cred = credentials.Certificate("serviceAccountKey.json")
+# Initialize Firebase
+cred = credentials.Certificate("/Users/jusvanthraja/Downloads/Ex1/FaceAttendenceSystem/venv/serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': "https://faceattendancerealtime-83476-default-rtdb.firebaseio.com/",
     'storageBucket': "faceattendancerealtime-83476.appspot.com"
 })
 bucket = storage.bucket()
 
-cap = cv2.VideoCapture(1)
+# Initialize camera
+cap = cv2.VideoCapture(0)
 cap.set(3, 640)
 cap.set(4, 480)
 
-imgBackground = cv2.imread('Resources/background.png')
-
-# Importing the mode images into a list
-folderModePath = 'Resources/Modes'
+# Load background image and mode images
+imgBackground = cv2.imread('../Resources/background.png')
+folderModePath = '../Resources/Modes'
 modePathList = os.listdir(folderModePath)
-imgModeList = []
-for path in modePathList:
-    imgModeList.append(cv2.imread(os.path.join(folderModePath, path)))
-# print(len(imgModeList))
+imgModeList = [cv2.imread(os.path.join(folderModePath, path)) for path in modePathList]
 
-# Load the encoding file
+# Load encoding file
 print("Loading Encode File ...")
-file = open('EncodeFile.p', 'rb')
-encodeListKnownWithIds = pickle.load(file)
-file.close()
+with open('EncodeFile.p', 'rb') as file:
+    encodeListKnownWithIds = pickle.load(file)
 encodeListKnown, studentIds = encodeListKnownWithIds
-# print(studentIds)
 print("Encode File Loaded")
 
 modeType = 0
@@ -47,34 +43,38 @@ counter = 0
 id = -1
 imgStudent = []
 
+# Main loop
 while True:
     success, img = cap.read()
 
-    imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
-    imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+    # Resize img to match the dimensions of imgBackground
+    img = cv2.resize(img, (640, 480))
 
+    # Convert the captured frame to RGB for face recognition
+    imgS = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # Detect faces in the current frame
     faceCurFrame = face_recognition.face_locations(imgS)
     encodeCurFrame = face_recognition.face_encodings(imgS, faceCurFrame)
 
+    # Copy the captured frame onto the background image
     imgBackground[162:162 + 480, 55:55 + 640] = img
+
+    # Display different modes on the background image
     imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[modeType]
 
+    # Check if any face is detected
     if faceCurFrame:
         for encodeFace, faceLoc in zip(encodeCurFrame, faceCurFrame):
             matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
             faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-            # print("matches", matches)
-            # print("faceDis", faceDis)
 
             matchIndex = np.argmin(faceDis)
-            # print("Match Index", matchIndex)
 
             if matches[matchIndex]:
-                # print("Known Face Detected")
-                # print(studentIds[matchIndex])
                 y1, x2, y2, x1 = faceLoc
                 y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-                bbox = 55 + x1, 162 + y1, x2 - x1, y2 - y1
+                bbox = 55 + x1, 162 + y1, x2 - x1, y2 - x1
                 imgBackground = cvzone.cornerRect(imgBackground, bbox, rt=0)
                 id = studentIds[matchIndex]
                 if counter == 0:
@@ -85,18 +85,16 @@ while True:
                     modeType = 1
 
         if counter != 0:
-
             if counter == 1:
-                # Get the Data
+                # Get student data
                 studentInfo = db.reference(f'Students/{id}').get()
                 print(studentInfo)
-                # Get the Image from the storage
-                blob = bucket.get_blob(f'Images/{id}.png')
+                # Get student image from storage
+                blob = bucket.get_blob(f'../Images/{id}.png')
                 array = np.frombuffer(blob.download_as_string(), np.uint8)
                 imgStudent = cv2.imdecode(array, cv2.COLOR_BGRA2BGR)
-                # Update data of attendance
-                datetimeObject = datetime.strptime(studentInfo['last_attendance_time'],
-                                                   "%Y-%m-%d %H:%M:%S")
+                # Update attendance data
+                datetimeObject = datetime.strptime(studentInfo['last_attendance_time'], "%Y-%m-%d %H:%M:%S")
                 secondsElapsed = (datetime.now() - datetimeObject).total_seconds()
                 print(secondsElapsed)
                 if secondsElapsed > 30:
@@ -110,12 +108,9 @@ while True:
                     imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[modeType]
 
             if modeType != 3:
-
                 if 10 < counter < 20:
                     modeType = 2
-
                 imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[modeType]
-
                 if counter <= 10:
                     cv2.putText(imgBackground, str(studentInfo['total_attendance']), (861, 125),
                                 cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
@@ -148,6 +143,14 @@ while True:
     else:
         modeType = 0
         counter = 0
-    # cv2.imshow("Webcam", img)
+
+    # Display the updated background image with overlays
     cv2.imshow("Face Attendance", imgBackground)
-    cv2.waitKey(1)
+
+    # Check for key press to exit the loop
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the camera and close all OpenCV windows
+cap.release()
+cv2.destroyAllWindows()

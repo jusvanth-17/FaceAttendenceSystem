@@ -1,6 +1,7 @@
 import cv2
 import pickle
 import os
+import face_recognition
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
