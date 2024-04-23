@@ -9,17 +9,47 @@ firebase_admin.initialize_app(cred, {
 ref = db.reference('Students')
 
 data = {
-    "321654":
+    "21CS040":
         {
-            "name": "Murtaza Hassan",
-            "major": "Robotics",
-            "starting_year": 2017,
-            "total_attendance": 7,
-            "standing": "G",
-            "year": 4,
+            "name": "Jusvanth raja",
+            "major": "computerscience",
+            "starting_year": 2021,
+            "total_attendance": 12,
+            "standing": "B",
+            "year": 1,
             "last_attendance_time": "2022-12-11 00:54:34"
         },
-    "852741":
+        "21CS029":
+        {
+            "name": "Eric",
+            "major": "computerscience",
+            "starting_year": 2021,
+            "total_attendance": 12,
+            "standing": "B",
+            "year": 1,
+            "last_attendance_time": "2022-12-11 00:54:34"
+        },
+        "21CS032":
+        {
+            "name": "Gokul raj",
+            "major": "computerscience",
+            "starting_year": 2021,
+            "total_attendance": 12,
+            "standing": "B",
+            "year": 1,
+            "last_attendance_time": "2022-12-11 00:54:34"
+        },
+        "21CS052":
+        {
+            "name": "Mahendran",
+            "major": "computer science",
+            "starting_year": 2021,
+            "total_attendance": 12,
+            "standing": "B",
+            "year": 1,
+            "last_attendance_time": "2022-12-11 00:54:34"
+        },
+    "21CS041":
         {
             "name": "Emly Blunt",
             "major": "Economics",

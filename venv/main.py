@@ -20,6 +20,7 @@ firebase_admin.initialize_app(cred, {
 })
 bucket = storage.bucket()
 
+
 # Initialize camera
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
@@ -75,6 +76,7 @@ while True:
                 y1, x2, y2, x1 = faceLoc
                 y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
                 bbox = 55 + x1, 162 + y1, x2 - x1, y2 - x1
+
                 imgBackground = cvzone.cornerRect(imgBackground, bbox, rt=0)
                 id = studentIds[matchIndex]
                 if counter == 0:
